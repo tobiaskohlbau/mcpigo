@@ -1,32 +1,42 @@
 package mcpigo
 
-import (
-	"fmt"
-	"strconv"
-)
-
 type World interface {
-	BlockAtCoordinates(x, y, z int) int
 	BlockAtPosition(pos Position) int
+	BlockAtCoordinates(x, y, z int) int
+	SetBlockAtPosition(pos Position, id int)
+	SetBlockAtCoordinates(x, y, z, id int)
+	SetBlocksInPositionRange(startPos, endPos Position, id int)
+	SetBlocksInCoordinatesRange(xs, ys, zs, xe, ye, ze, id int)
 }
 
 type MCPIWorld struct {
-	conn Connection
+	rw MinecraftReadWriter
+}
+
+func NewWorld(rw MinecraftReadWriter) World {
+	return MCPIWorld{rw}
 }
 
 func (m MCPIWorld) BlockAtPosition(pos Position) int {
-	return m.BlockAtCoordinates(pos.X, pos.Y, pos.Z)
+	return m.rw.ReceiveBlock(pos)
 }
 
 func (m MCPIWorld) BlockAtCoordinates(x, y, z int) int {
-	m.conn.Send(fmt.Sprintf("world.getBlock(%v,%v,%v)", x, y, z))
-	resp, err := m.conn.Receive()
-	if err != nil {
-		return -1
-	}
-	id, err := strconv.Atoi(resp)
-	if err != nil {
-		return -1
-	}
-	return id
+	return m.BlockAtPosition(Position{float64(x), float64(y), float64(z)})
+}
+
+func (m MCPIWorld) SetBlockAtPosition(pos Position, id int) {
+	m.rw.WriteBlock(pos, id)
+}
+
+func (m MCPIWorld) SetBlockAtCoordinates(x, y, z, id int) {
+	m.SetBlockAtPosition(Position{float64(x), float64(y), float64(z)}, id)
+}
+
+func (m MCPIWorld) SetBlocksInPositionRange(startPos, endPos Position, id int) {
+	m.rw.WriteBlocks(startPos, endPos, id)
+}
+
+func (m MCPIWorld) SetBlocksInCoordinatesRange(xs, ys, zs, xe, ye, ze, id int) {
+	m.SetBlocksInPositionRange(Position{float64(xs), float64(ys), float64(zs)}, Position{float64(xe), float64(ye), float64(ze)}, id)
 }

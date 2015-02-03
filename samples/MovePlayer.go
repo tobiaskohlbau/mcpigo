@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	"os"
 
@@ -8,25 +9,28 @@ import (
 )
 
 func main() {
-	conn, err := mcpigo.Connect("192.168.10.164", "4711")
+	mc, err := mcpigo.Connect("192.168.10.164", "4711")
 	if err != nil {
 		log.Fatal(err)
 		os.Exit(-1)
 	}
 
-	//world, err := conn.World()
-	//if err != nil {
-	//	log.Fatal(err)
-	//	os.Exit(-1)
-	//}
+	mc.Chat.Message("Getting positon...")
+	pos := mc.Player.Position()
+	x, y, z := mc.Player.PositionCoordinates()
+	pos.X += 5
+	mc.Chat.Message("Changing position...")
+	mc.Player.SetPosition(pos)
 
-	player, err := conn.Player()
-	if err != nil {
-		log.Fatal(err)
-		os.Exit(-1)
-	}
+	pos.X -= 5
+	id := mc.World.BlockAtPosition(pos)
+	fmt.Println(id)
 
-	position := player.Position()
-	position.X += 5
-	player.SetPosition(position)
+	mc.World.SetBlockAtCoordinates(x, y+5, z, 1)
+
+	pos1 := pos
+	pos2 := pos
+	pos2.X += 5
+
+	mc.World.SetBlocksInPositionRange(pos1, pos2, 1)
 }
